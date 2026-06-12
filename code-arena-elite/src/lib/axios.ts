@@ -1,11 +1,12 @@
 // FRONTEND: src/lib/axios.ts
+// Single unified API client used everywhere
 
 import axios from "axios";
 
 const API_URL = "http://localhost:5000/api";
 
-// ✅ Same key as AuthContext
-const AUTH_TOKEN_KEY = "auth_token";
+// Consistent key — matches AuthContext
+const TOKEN_KEY = "token";
 
 const api = axios.create({
   baseURL: API_URL,
@@ -14,46 +15,30 @@ const api = axios.create({
   },
 });
 
-
 // ============================
 // Attach JWT Automatically
 // ============================
 api.interceptors.request.use(
   (config) => {
-
-    // ✅ Read correct token
-    const token = localStorage.getItem(AUTH_TOKEN_KEY);
-
+    const token = localStorage.getItem(TOKEN_KEY);
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
-
     return config;
   },
   (error) => Promise.reject(error)
 );
-
 
 // ============================
 // Auto Logout on 401
 // ============================
 api.interceptors.response.use(
   (res) => res,
-
   (err) => {
-
-    // if (err.response?.status === 401) {
-
-    //   // ✅ Remove correct token
-    //   localStorage.removeItem(AUTH_TOKEN_KEY);
-
-    //   window.location.href = "/login";
-    // }
     if (err.response?.status === 401) {
-  console.error("401 Unauthorized:", err.response?.data);
-  }
-
-
+      localStorage.removeItem(TOKEN_KEY);
+      window.location.href = "/login";
+    }
     return Promise.reject(err);
   }
 );

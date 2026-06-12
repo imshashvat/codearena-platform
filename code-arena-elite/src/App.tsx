@@ -14,6 +14,8 @@ import ProblemSolvePage from "./pages/ProblemSolvePage";
 import SubmissionsPage from "./pages/SubmissionsPage";
 import LeaderboardPage from "./pages/LeaderboardPage";
 import AdminPage from "./pages/AdminPage";
+import ContestsPage from "./pages/ContestsPage";
+import ContestRoomPage from "./pages/ContestRoomPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -29,55 +31,16 @@ const App = () => (
             <Route path="/" element={<LandingPage />} />
             <Route path="/login" element={<LoginPage />} />
             <Route path="/register" element={<RegisterPage />} />
-            <Route
-              path="/dashboard"
-              element={
-                <ProtectedRoute>
-                  <DashboardPage />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/problems"
-              element={
-                <ProtectedRoute>
-                  <ProblemsPage />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/problem/:id"
-              element={
-                <ProtectedRoute>
-                  <ProblemSolvePage />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/submissions"
-              element={
-                <ProtectedRoute>
-                  <SubmissionsPage />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/leaderboard"
-              element={
-                <ProtectedRoute>
-                  <LeaderboardPage />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/admin"
-              element={
-                <ProtectedRoute>
-                  <AdminPage />
-                </ProtectedRoute>
-              }
-            />
-            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+
+            <Route path="/dashboard" element={<ProtectedRoute><DashboardPage /></ProtectedRoute>} />
+            <Route path="/problems" element={<ProtectedRoute><ProblemsPage /></ProtectedRoute>} />
+            <Route path="/problem/:id" element={<ProtectedRoute><ProblemSolvePage /></ProtectedRoute>} />
+            <Route path="/submissions" element={<ProtectedRoute><SubmissionsPage /></ProtectedRoute>} />
+            <Route path="/leaderboard" element={<ProtectedRoute><LeaderboardPage /></ProtectedRoute>} />
+            <Route path="/contests" element={<ProtectedRoute><ContestsPage /></ProtectedRoute>} />
+            <Route path="/contests/:id" element={<ProtectedRoute><ContestRoomPage /></ProtectedRoute>} />
+            <Route path="/admin" element={<ProtectedRoute><AdminPage /></ProtectedRoute>} />
+
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>

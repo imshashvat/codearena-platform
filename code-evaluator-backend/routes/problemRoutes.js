@@ -4,7 +4,8 @@ const router = express.Router();
 const {
   createProblem,
   getProblems,
-  getProblemById
+  getProblemById,
+  deleteProblem,
 } = require("../controllers/problemController");
 
 const auth = require("../middleware/auth");
@@ -17,5 +18,8 @@ router.get("/", auth, getProblems);
 
 // Get single problem
 router.get("/:id", auth, getProblemById);
+
+// Delete problem (Admin)
+router.delete("/:id", auth, deleteProblem);
 
 module.exports = router;

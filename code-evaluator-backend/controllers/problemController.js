@@ -32,9 +32,29 @@ exports.getProblemById = async (req, res) => {
   try {
     const problem = await Problem.findById(req.params.id);
 
+    if (!problem) {
+      return res.status(404).json({ message: "Problem not found" });
+    }
+
     res.json(problem);
 
   } catch (error) {
     res.status(404).json({ message: "Problem not found" });
+  }
+};
+
+// Delete Problem (Admin)
+exports.deleteProblem = async (req, res) => {
+  try {
+    const problem = await Problem.findByIdAndDelete(req.params.id);
+
+    if (!problem) {
+      return res.status(404).json({ message: "Problem not found" });
+    }
+
+    res.json({ message: "Problem deleted successfully" });
+
+  } catch (error) {
+    res.status(500).json({ error: error.message });
   }
 };

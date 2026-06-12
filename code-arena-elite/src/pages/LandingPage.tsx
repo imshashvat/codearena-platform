@@ -261,20 +261,41 @@ export default function LandingPage() {
       <section className="py-24 relative">
         <div className="absolute inset-0 bg-gradient-to-t from-primary/5 via-transparent to-transparent" />
         <div className="container relative mx-auto px-4 lg:px-8">
-          <div className="glass-card p-12 md:p-16 text-center max-w-4xl mx-auto animated-border">
-            <h2 className="text-3xl md:text-4xl font-bold mb-4">
-              Ready to start your coding journey?
-            </h2>
-            <p className="text-muted-foreground mb-8 max-w-xl mx-auto">
-              Join thousands of developers who are improving their skills every day. 
-              Create your free account and start solving problems now.
-            </p>
-            <Link to="/register">
-              <Button size="lg" className="btn-neon bg-primary text-primary-foreground px-10 py-6 text-lg gap-2">
-                Create Free Account
-                <ArrowRight className="h-5 w-5" />
-              </Button>
-            </Link>
+          <div className="cta-section-card max-w-4xl mx-auto">
+            {/* Background glow */}
+            <div className="cta-glow" />
+            {/* Decorative orbs */}
+            <div className="absolute top-8 left-8 w-24 h-24 bg-primary/10 rounded-full blur-2xl pointer-events-none" />
+            <div className="absolute bottom-8 right-8 w-32 h-32 bg-accent/10 rounded-full blur-2xl pointer-events-none" />
+            <div className="relative z-10">
+              <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary/10 border border-primary/20 mb-6 text-xs font-medium text-primary">
+                <span className="relative flex h-1.5 w-1.5">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75" />
+                  <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-primary" />
+                </span>
+                Free to join · No credit card required
+              </div>
+              <h2 className="text-3xl md:text-4xl font-bold mb-4">
+                Ready to start your <span className="gradient-text">coding journey?</span>
+              </h2>
+              <p className="text-muted-foreground mb-8 max-w-xl mx-auto">
+                Join thousands of developers who are improving their skills every day.
+                Create your free account and start solving problems now.
+              </p>
+              <div className="flex flex-col sm:flex-row gap-3 justify-center">
+                <Link to="/register">
+                  <Button size="lg" className="btn-neon bg-primary text-primary-foreground px-10 py-6 text-lg gap-2 group">
+                    Create Free Account
+                    <ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-1" />
+                  </Button>
+                </Link>
+                <Link to="/problems">
+                  <Button size="lg" variant="outline" className="px-8 py-6 text-lg border-border hover:border-primary/40 hover:bg-primary/5 transition-all">
+                    Browse Problems
+                  </Button>
+                </Link>
+              </div>
+            </div>
           </div>
         </div>
       </section>

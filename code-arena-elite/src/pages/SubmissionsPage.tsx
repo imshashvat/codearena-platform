@@ -1,10 +1,11 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { MainLayout } from "@/components/layout/MainLayout";
 import { DifficultyBadge } from "@/components/ui/DifficultyBadge";
 import { StatusBadge } from "@/components/ui/StatusBadge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import api from "@/lib/axios";
 import {
   Search,
   Filter,
@@ -13,114 +14,105 @@ import {
   Eye,
   X,
   Code2,
+  Clock,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-// Mock data
-const submissions = [
-  {
-    id: "sub-1",
-    problemId: "1",
-    problemTitle: "Two Sum",
-    difficulty: "easy" as const,
-    status: "accepted" as const,
-    language: "Python",
-    runtime: "52ms",
-    memory: "14.2 MB",
-    submittedAt: "2024-01-15 14:30:25",
-    code: `def two_sum(nums, target):
-    seen = {}
-    for i, num in enumerate(nums):
-        complement = target - num
-        if complement in seen:
-            return [seen[complement], i]
-        seen[num] = i
-    return []`,
-  },
-  {
-    id: "sub-2",
-    problemId: "10",
-    problemTitle: "Merge K Sorted Lists",
-    difficulty: "hard" as const,
-    status: "wrong_answer" as const,
-    language: "Python",
-    runtime: "N/A",
-    memory: "N/A",
-    submittedAt: "2024-01-15 10:15:42",
-    code: `# Incomplete solution`,
-  },
-  {
-    id: "sub-3",
-    problemId: "9",
-    problemTitle: "Valid Parentheses",
-    difficulty: "easy" as const,
-    status: "accepted" as const,
-    language: "JavaScript",
-    runtime: "68ms",
-    memory: "12.8 MB",
-    submittedAt: "2024-01-14 22:45:10",
-    code: `function isValid(s) {
-  const stack = [];
-  const map = { ')': '(', ']': '[', '}': '{' };
-  for (const char of s) {
-    if ('([{'.includes(char)) stack.push(char);
-    else if (stack.pop() !== map[char]) return false;
-  }
-  return stack.length === 0;
-}`,
-  },
-  {
-    id: "sub-4",
-    problemId: "7",
-    problemTitle: "Container With Most Water",
-    difficulty: "medium" as const,
-    status: "accepted" as const,
-    language: "Python",
-    runtime: "148ms",
-    memory: "18.4 MB",
-    submittedAt: "2024-01-14 18:20:33",
-    code: `def maxArea(height):
-    left, right = 0, len(height) - 1
-    max_area = 0
-    while left < right:
-        area = min(height[left], height[right]) * (right - left)
-        max_area = max(max_area, area)
-        if height[left] < height[right]:
-            left += 1
-        else:
-            right -= 1
-    return max_area`,
-  },
-  {
-    id: "sub-5",
-    problemId: "4",
-    problemTitle: "Median of Two Sorted Arrays",
-    difficulty: "hard" as const,
-    status: "time_limit" as const,
-    language: "Python",
-    runtime: "N/A",
-    memory: "N/A",
-    submittedAt: "2024-01-13 16:55:18",
-    code: `# Time limit exceeded`,
-  },
-];
+interface Submission {
+  _id: string;
+  problem: {
+    _id: string;
+    title: string;
+    difficulty: "easy" | "medium" | "hard";
+  };
+  verdict: string;
+  language: string;
+  code: string;
+  passed: number;
+  total: number;
+  createdAt: string;
+}
 
-const statusFilters = ["all", "accepted", "wrong_answer", "pending", "time_limit"] as const;
+const statusFilters = ["all", "Accepted", "Wrong Answer", "Compilation Error", "Runtime Error", "Time Limit Exceeded"] as const;
+
+// Language color map matching ProblemSolvePage
+const LANG_COLORS: Record<string, string> = {
+  python:     "#3B82F6",
+  javascript: "#22C55E",
+  c:          "#F97316",
+  cpp:        "#EF4444",
+  java:       "#EAB308",
+};
+
+const LANG_LABELS: Record<string, string> = {
+  python:     "Python 3",
+  javascript: "JavaScript",
+  c:          "C",
+  cpp:        "C++17",
+  java:       "Java",
+};
+
+function LanguageBadge({ lang }: { lang: string }) {
+  const color = LANG_COLORS[lang] || "#94a3b8";
+  const label = LANG_LABELS[lang] || lang;
+  return (
+    <span className="inline-flex items-center gap-1.5 text-xs font-medium">
+      <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: color }} />
+      {label}
+    </span>
+  );
+}
 
 export default function SubmissionsPage() {
+  const [submissions, setSubmissions] = useState<Submission[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
-  const [selectedSubmission, setSelectedSubmission] = useState<(typeof submissions)[0] | null>(null);
+  const [selectedSubmission, setSelectedSubmission] = useState<Submission | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
 
+  // Fetch real submission history
+  useEffect(() => {
+    const fetchSubmissions = async () => {
+      try {
+        const res = await api.get("/history");
+        setSubmissions(res.data || []);
+      } catch (err: any) {
+        setError(err?.response?.data?.message || "Failed to load submissions");
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchSubmissions();
+  }, []);
+
   const filteredSubmissions = submissions.filter((sub) => {
-    const matchesSearch = sub.problemTitle.toLowerCase().includes(search.toLowerCase());
-    const matchesStatus = statusFilter === "all" || sub.status === statusFilter;
+    const matchesSearch = sub.problem?.title?.toLowerCase().includes(search.toLowerCase());
+    const matchesStatus = statusFilter === "all" || sub.verdict === statusFilter;
     return matchesSearch && matchesStatus;
   });
 
-  const totalPages = Math.ceil(filteredSubmissions.length / itemsPerPage);
+  const totalPages = Math.max(1, Math.ceil(filteredSubmissions.length / itemsPerPage));
+  const paginated = filteredSubmissions.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
+
+  const formatTime = (iso: string) => {
+    const d = new Date(iso);
+    return d.toLocaleString();
+  };
+
+  const getStatusValue = (verdict: string): "accepted" | "wrong_answer" | "pending" | "time_limit" => {
+    if (verdict === "Accepted") return "accepted";
+    if (verdict === "Wrong Answer") return "wrong_answer";
+    if (verdict === "Time Limit Exceeded") return "time_limit";
+    if (verdict === "Compilation Error" || verdict === "Runtime Error") return "wrong_answer";
+    return "pending";
+  };
 
   return (
     <MainLayout>
@@ -143,7 +135,7 @@ export default function SubmissionsPage() {
               <Input
                 placeholder="Search by problem name..."
                 value={search}
-                onChange={(e) => setSearch(e.target.value)}
+                onChange={(e) => { setSearch(e.target.value); setCurrentPage(1); }}
                 className="pl-10 bg-background/50 border-border"
               />
             </div>
@@ -151,12 +143,12 @@ export default function SubmissionsPage() {
               <Filter className="h-4 w-4 text-muted-foreground" />
               <select
                 value={statusFilter}
-                onChange={(e) => setStatusFilter(e.target.value)}
+                onChange={(e) => { setStatusFilter(e.target.value); setCurrentPage(1); }}
                 className="bg-muted/50 border border-border rounded-md px-3 py-2 text-sm focus:outline-none focus:border-primary capitalize"
               >
                 {statusFilters.map((status) => (
-                  <option key={status} value={status} className="capitalize">
-                    {status.replace("_", " ")}
+                  <option key={status} value={status}>
+                    {status}
                   </option>
                 ))}
               </select>
@@ -164,79 +156,83 @@ export default function SubmissionsPage() {
           </div>
         </div>
 
-        {/* Submissions Table */}
+        {/* Table */}
         <div className="glass-card overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
                 <tr className="border-b border-border/50">
-                  <th className="p-4 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                    Problem
-                  </th>
-                  <th className="p-4 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                    Status
-                  </th>
-                  <th className="p-4 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                    Language
-                  </th>
-                  <th className="p-4 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                    Runtime
-                  </th>
-                  <th className="p-4 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                    Memory
-                  </th>
-                  <th className="p-4 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                    Submitted
-                  </th>
-                  <th className="p-4 text-right text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                    Actions
-                  </th>
+                  <th className="p-4 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Problem</th>
+                  <th className="p-4 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Status</th>
+                  <th className="p-4 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Language</th>
+                  <th className="p-4 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Score</th>
+                  <th className="p-4 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Submitted</th>
+                  <th className="p-4 text-right text-xs font-medium text-muted-foreground uppercase tracking-wider">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border/50">
-                {filteredSubmissions.map((submission) => (
-                  <tr key={submission.id} className="table-row-hover">
-                    <td className="p-4">
-                      <Link
-                        to={`/problem/${submission.problemId}`}
-                        className="font-medium hover:text-primary transition-colors"
-                      >
-                        {submission.problemTitle}
-                      </Link>
-                      <div className="mt-1">
-                        <DifficultyBadge difficulty={submission.difficulty} />
-                      </div>
-                    </td>
-                    <td className="p-4">
-                      <StatusBadge status={submission.status} />
-                    </td>
-                    <td className="p-4 text-sm text-muted-foreground">
-                      {submission.language}
-                    </td>
-                    <td className="p-4 text-sm">
-                      <span className={submission.runtime !== "N/A" ? "text-neon-green" : "text-muted-foreground"}>
-                        {submission.runtime}
-                      </span>
-                    </td>
-                    <td className="p-4 text-sm text-muted-foreground">
-                      {submission.memory}
-                    </td>
-                    <td className="p-4 text-sm text-muted-foreground">
-                      {submission.submittedAt}
-                    </td>
-                    <td className="p-4 text-right">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => setSelectedSubmission(submission)}
-                        className="gap-1"
-                      >
-                        <Eye className="h-4 w-4" />
-                        View
-                      </Button>
+                {loading ? (
+                  <tr>
+                    <td colSpan={6} className="p-8 text-center text-muted-foreground">
+                      <Clock className="h-5 w-5 animate-spin mx-auto mb-2" />
+                      Loading submissions...
                     </td>
                   </tr>
-                ))}
+                ) : error ? (
+                  <tr>
+                    <td colSpan={6} className="p-8 text-center text-red-400">{error}</td>
+                  </tr>
+                ) : paginated.length === 0 ? (
+                  <tr>
+                    <td colSpan={6} className="p-8 text-center text-muted-foreground">
+                      No submissions found.{" "}
+                      <Link to="/problems" className="text-primary hover:underline">
+                        Solve a problem!
+                      </Link>
+                    </td>
+                  </tr>
+                ) : (
+                  paginated.map((submission) => (
+                    <tr key={submission._id} className="table-row-hover">
+                      <td className="p-4">
+                        <Link
+                          to={`/problem/${submission.problem?._id}`}
+                          className="font-medium hover:text-primary transition-colors"
+                        >
+                          {submission.problem?.title || "Unknown Problem"}
+                        </Link>
+                        <div className="mt-1">
+                          <DifficultyBadge difficulty={submission.problem?.difficulty || "easy"} />
+                        </div>
+                      </td>
+                      <td className="p-4">
+                        <StatusBadge status={getStatusValue(submission.verdict)} />
+                      </td>
+                      <td className="p-4 text-sm text-muted-foreground">
+                        <LanguageBadge lang={submission.language} />
+                      </td>
+                      <td className="p-4 text-sm">
+                        <span className={submission.verdict === "Accepted" ? "text-neon-green font-medium" : "text-muted-foreground"}>
+                          {submission.passed}/{submission.total}
+                        </span>
+                      </td>
+                      <td className="p-4 text-sm text-muted-foreground">
+                        {formatTime(submission.createdAt)}
+                      </td>
+                      <td className="p-4 text-right">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => setSelectedSubmission(submission)}
+                          className="gap-1"
+                        >
+                          <Eye className="h-4 w-4" />
+                          View
+                        </Button>
+                      </td>
+                    </tr>
+                  ))
+                )}
               </tbody>
             </table>
           </div>
@@ -244,7 +240,7 @@ export default function SubmissionsPage() {
           {/* Pagination */}
           <div className="p-4 border-t border-border/50 flex items-center justify-between">
             <p className="text-sm text-muted-foreground">
-              Showing {filteredSubmissions.length} submissions
+              Showing {paginated.length} of {filteredSubmissions.length} submissions
             </p>
             <div className="flex items-center gap-2">
               <Button
@@ -256,7 +252,7 @@ export default function SubmissionsPage() {
                 <ChevronLeft className="h-4 w-4" />
               </Button>
               <span className="text-sm px-3">
-                Page {currentPage} of {totalPages || 1}
+                Page {currentPage} of {totalPages}
               </span>
               <Button
                 variant="outline"
@@ -283,19 +279,15 @@ export default function SubmissionsPage() {
               <div className="flex items-center gap-3">
                 <Code2 className="h-5 w-5 text-primary" />
                 <div>
-                  <h3 className="font-semibold">{selectedSubmission.problemTitle}</h3>
-                  <p className="text-xs text-muted-foreground">
-                    {selectedSubmission.language} • {selectedSubmission.submittedAt}
+                  <h3 className="font-semibold">{selectedSubmission.problem?.title}</h3>
+                  <p className="text-xs text-muted-foreground capitalize">
+                    {selectedSubmission.language} • {formatTime(selectedSubmission.createdAt)}
                   </p>
                 </div>
               </div>
               <div className="flex items-center gap-3">
-                <StatusBadge status={selectedSubmission.status} />
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setSelectedSubmission(null)}
-                >
+                <StatusBadge status={getStatusValue(selectedSubmission.verdict)} />
+                <Button variant="ghost" size="sm" onClick={() => setSelectedSubmission(null)}>
                   <X className="h-4 w-4" />
                 </Button>
               </div>
@@ -305,18 +297,18 @@ export default function SubmissionsPage() {
                 {selectedSubmission.code}
               </pre>
             </div>
-            {selectedSubmission.status === "accepted" && (
-              <div className="p-4 border-t border-border/50 flex items-center gap-6 text-sm">
-                <div>
-                  <span className="text-muted-foreground">Runtime:</span>{" "}
-                  <span className="text-neon-green font-medium">{selectedSubmission.runtime}</span>
-                </div>
-                <div>
-                  <span className="text-muted-foreground">Memory:</span>{" "}
-                  <span className="font-medium">{selectedSubmission.memory}</span>
-                </div>
+            <div className="p-4 border-t border-border/50 flex items-center gap-6 text-sm">
+              <div>
+                <span className="text-muted-foreground">Score: </span>
+                <span className={cn("font-medium", selectedSubmission.verdict === "Accepted" ? "text-neon-green" : "text-red-400")}>
+                  {selectedSubmission.passed}/{selectedSubmission.total} test cases
+                </span>
               </div>
-            )}
+              <div>
+                <span className="text-muted-foreground">Verdict: </span>
+                <span className="font-medium">{selectedSubmission.verdict}</span>
+              </div>
+            </div>
           </div>
         </div>
       )}

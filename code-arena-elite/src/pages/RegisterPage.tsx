@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Code2, ArrowRight, Mail, Lock, User, AlertCircle, Check } from "lucide-react";
 import { toast } from "sonner";
+import api from "@/lib/axios";
 
 const passwordRequirements = [
   { label: "At least 8 characters", test: (p: string) => p.length >= 8 },
@@ -54,11 +55,20 @@ export default function RegisterPage() {
     setIsLoading(true);
 
     try {
-      await new Promise((resolve) => setTimeout(resolve, 1500));
-      toast.success("Account created successfully!");
-      navigate("/dashboard");
-    } catch {
-      setError("Registration failed. Please try again.");
+      // ✅ REAL REGISTER API CALL
+      await api.post("/auth/register", {
+        name: formData.username,  // backend expects "name"
+        email: formData.email,
+        password: formData.password,
+      });
+
+      toast.success("Account created! Please sign in.");
+      navigate("/login");
+    } catch (err: any) {
+      setError(
+        err?.response?.data?.message ||
+        "Registration failed. Please try again."
+      );
     } finally {
       setIsLoading(false);
     }
