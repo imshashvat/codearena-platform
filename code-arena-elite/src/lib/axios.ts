@@ -3,7 +3,9 @@
 
 import axios from "axios";
 
-const API_URL = "http://localhost:5000/api";
+// Use VITE_API_URL in production (set this on Vercel/Netlify)
+// Falls back to localhost for local development
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
 
 // Consistent key — matches AuthContext
 const TOKEN_KEY = "token";

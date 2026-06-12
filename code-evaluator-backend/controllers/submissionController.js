@@ -13,8 +13,8 @@ const LANGUAGE_CONFIG = {
     extension: ".py",
     monacoId: "python",
     compiled: false,
-    // Use 'py' Windows Launcher → guaranteed Python 3
-    run: (file) => ({ bin: "py", args: [file] }),
+    // Use 'py' on Windows, 'python3' on Linux/Mac
+    run: (file) => ({ bin: process.platform === "win32" ? "py" : "python3", args: [file] }),
   },
   javascript: {
     extension: ".js",
@@ -251,7 +251,8 @@ async function compileCode(code, lang, config) {
     } else {
       // C or C++
       const srcFile = path.join(tmpDir, `solution${config.extension}`);
-      const binFile = path.join(tmpDir, "solution.exe");
+      // On Linux/Mac, no .exe extension needed
+      const binFile = path.join(tmpDir, process.platform === "win32" ? "solution.exe" : "solution");
       fs.writeFileSync(srcFile, code, "utf8");
 
       const compileCmd = config.compile(srcFile, binFile);
