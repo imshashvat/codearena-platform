@@ -4,9 +4,9 @@ A full-stack competitive coding platform with real-time code evaluation, contest
 
 ## Tech Stack
 - **Frontend:** Vite + React + TypeScript → deployed to **Vercel**
-- **Backend:** Node.js + Express + MongoDB → deployed to **Render (Docker)**
+- **Backend:** Node.js + Express + MongoDB → deployed to **Railway (Docker)**
 - **Database:** MongoDB Atlas (free tier)
-- **Code Judge:** Built-in runner (Python3, C, C++, Java, JavaScript)
+- **Code Judge:** Built-in multi-language runner (Python3, C, C++, Java, JavaScript)
 
 ---
 
@@ -15,61 +15,68 @@ A full-stack competitive coding platform with real-time code evaluation, contest
 1. Go to [https://cloud.mongodb.com](https://cloud.mongodb.com) and sign up / log in
 2. Click **"Build a Database"** → choose **Free (M0)**
 3. Choose a cloud provider (AWS) and region closest to you
-4. Set a **username** and **password** (save these!)
-5. Under **"Network Access"**, click **"Add IP Address"** → click **"Allow Access from Anywhere"** (0.0.0.0/0)
+4. Set a **Username** and **Password** (save these!)
+5. Under **"Network Access"** → **"Add IP Address"** → click **"Allow Access from Anywhere"** (`0.0.0.0/0`)
 6. Click **"Connect"** on your cluster → **"Drivers"** → copy the connection string
 
 Your connection string looks like:
 ```
 mongodb+srv://admin:yourpassword@cluster0.abc12.mongodb.net/codearena?retryWrites=true&w=majority
 ```
+Replace `<password>` with your actual password.
 
 ---
 
-## ⚙️ Step 2: Deploy Backend to Render
+## 🚂 Step 2: Deploy Backend to Railway
 
-1. Go to [https://render.com](https://render.com) and sign up / log in with GitHub
-2. Click **"New"** → **"Web Service"**
-3. Connect your GitHub repo: `imshashvat/codearena-platform`
-4. Configure the service:
-   - **Name:** `codearena-backend`
-   - **Root Directory:** `code-evaluator-backend`
-   - **Environment:** `Docker`
-   - **Instance Type:** `Free`
-5. Under **Environment Variables**, add these:
+1. Go to [https://railway.app](https://railway.app) and sign up / log in with **GitHub**
+2. Click **"New Project"** → **"Deploy from GitHub repo"**
+3. Select `imshashvat/codearena-platform`
+4. Railway will detect the project. Click **"Add service"** → select **GitHub Repo** again if needed
+5. In the service settings, set the **Root Directory** to:
+   ```
+   code-evaluator-backend
+   ```
+   Railway will automatically use the `Dockerfile` in that directory.
 
-| Key | Value |
-|-----|-------|
-| `MONGO_URI` | Your MongoDB Atlas connection string |
-| `JWT_SECRET` | A long random string (run: `node -e "console.log(require('crypto').randomBytes(64).toString('hex'))"`) |
-| `FRONTEND_URL` | _(leave blank for now, add after frontend deployment)_ |
+6. Go to the **"Variables"** tab and add these environment variables:
 
-6. Click **"Create Web Service"**
-7. Wait for the Docker build to complete (~5-10 minutes first time)
-8. Your backend URL will be: `https://codearena-backend.onrender.com`
+   | Variable | Value |
+   |----------|-------|
+   | `MONGO_URI` | Your MongoDB Atlas connection string |
+   | `JWT_SECRET` | A long random string (generate below) |
+   | `FRONTEND_URL` | *(leave blank for now — add after Step 3)* |
 
-> **Note:** Free tier Render services spin down after 15 minutes of inactivity. First request may take ~30 seconds to wake up.
+   **Generate a secure JWT secret** (run this in any terminal):
+   ```bash
+   node -e "console.log(require('crypto').randomBytes(64).toString('hex'))"
+   ```
+
+7. Go to **"Settings"** → under **"Networking"** → click **"Generate Domain"**
+8. Railway will build the Docker image and deploy (~3-5 minutes)
+9. Your backend URL will be something like: `https://codearena-backend-production.up.railway.app`
+
+> **Note:** Railway's free Hobby tier gives you $5/month free credits — more than enough for a small project.
 
 ---
 
 ## 🌐 Step 3: Deploy Frontend to Vercel
 
-1. Go to [https://vercel.com](https://vercel.com) and sign up / log in with GitHub
-2. Click **"Add New Project"**
-3. Import your repo: `imshashvat/codearena-platform`
-4. Configure the project:
+1. Go to [https://vercel.com](https://vercel.com) and sign up / log in with **GitHub**
+2. Click **"Add New Project"** → Import `imshashvat/codearena-platform`
+3. Configure the project:
    - **Framework Preset:** `Vite`
    - **Root Directory:** `code-arena-elite`
    - **Build Command:** `npm run build`
    - **Output Directory:** `dist`
-5. Under **Environment Variables**, add:
+4. Under **Environment Variables**, add:
 
-| Key | Value |
-|-----|-------|
-| `VITE_API_URL` | `https://codearena-backend.onrender.com/api` |
+   | Variable | Value |
+   |----------|-------|
+   | `VITE_API_URL` | `https://your-railway-backend-url.up.railway.app/api` |
 
-6. Click **"Deploy"**
-7. Your frontend URL will be: `https://codearena-elite.vercel.app` (or similar)
+5. Click **"Deploy"**
+6. Your frontend URL will be: `https://codearena-elite.vercel.app` (or similar)
 
 ---
 
@@ -77,20 +84,23 @@ mongodb+srv://admin:yourpassword@cluster0.abc12.mongodb.net/codearena?retryWrite
 
 After both are deployed:
 
-1. Go to your **Render** dashboard → `codearena-backend` → **Environment**
+1. Go to **Railway** → your backend service → **"Variables"** tab
 2. Add/update:
-   - `FRONTEND_URL` = `https://codearena-elite.vercel.app` (your actual Vercel URL)
-3. Click **"Save Changes"** — Render will redeploy automatically
+   ```
+   FRONTEND_URL = https://codearena-elite.vercel.app
+   ```
+   (use your actual Vercel URL)
+3. Railway will **automatically redeploy** with the new variable
 
 ---
 
-## 🔑 Step 5: Create Admin Account
+## 👑 Step 5: Create Admin Account
 
-After deployment, register normally via the frontend, then promote yourself to admin via MongoDB Atlas:
+After deployment, register an account via the frontend, then:
 
-1. Go to MongoDB Atlas → **Browse Collections** → `codearena` → `users`
-2. Find your user document and edit: set `"role": "admin"`
-3. Log out and back in — you'll now have access to `/admin`
+1. Open **MongoDB Atlas** → Browse Collections → `codearena` → `users`
+2. Find your user document → click **Edit** → set `"role": "admin"`
+3. Log out and back in — you'll have access to the `/admin` panel
 
 ---
 
@@ -103,15 +113,15 @@ cd codearena-platform
 
 # Backend
 cd code-evaluator-backend
-cp .env.example .env     # Fill in your values
+cp .env.example .env        # Fill in your values
 npm install
-npm run dev              # Runs on http://localhost:5000
+npm run dev                 # Runs on http://localhost:5000
 
 # Frontend (new terminal)
-cd code-arena-elite
-cp .env.example .env.local  # Optional, defaults to localhost:5000
+cd ../code-arena-elite
+cp .env.example .env.local  # Optional — defaults to localhost:5000
 npm install
-npm run dev              # Runs on http://localhost:8080
+npm run dev                 # Runs on http://localhost:8080
 ```
 
 ---
@@ -121,15 +131,15 @@ npm run dev              # Runs on http://localhost:8080
 ### Backend (`code-evaluator-backend/.env`)
 | Variable | Required | Description |
 |----------|----------|-------------|
-| `PORT` | No | Server port (default: 5000) |
-| `MONGO_URI` | **Yes** | MongoDB connection string |
+| `PORT` | No | Server port — Railway sets this automatically |
+| `MONGO_URI` | **Yes** | MongoDB Atlas connection string |
 | `JWT_SECRET` | **Yes** | Long random string for signing JWTs |
-| `FRONTEND_URL` | Yes (prod) | Deployed frontend URL for CORS |
+| `FRONTEND_URL` | Yes (prod) | Deployed Vercel frontend URL for CORS |
 
 ### Frontend (`code-arena-elite/.env.local`)
 | Variable | Required | Description |
 |----------|----------|-------------|
-| `VITE_API_URL` | Yes (prod) | Backend API URL (e.g., `https://...onrender.com/api`) |
+| `VITE_API_URL` | Yes (prod) | Railway backend API URL ending in `/api` |
 
 ---
 
