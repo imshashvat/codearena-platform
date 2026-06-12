@@ -9,18 +9,29 @@ connectDB();
 const app = express();
 
 // Middleware
+// Support comma-separated list in FRONTEND_URL (e.g. "https://a.vercel.app,https://b.vercel.app")
+const extraOrigins = (process.env.FRONTEND_URL || "")
+  .split(",")
+  .map((o) => o.trim())
+  .filter(Boolean);
+
 const allowedOrigins = [
   "http://localhost:5173",
   "http://localhost:8080",
   "http://localhost:8081",
-  process.env.FRONTEND_URL, // e.g. https://codearena.vercel.app
-].filter(Boolean);
+  ...extraOrigins,
+];
 
 app.use(cors({
   origin: (origin, callback) => {
-    // Allow requests with no origin (mobile apps, curl, etc.)
+    // Allow requests with no origin (mobile apps, curl, Postman, etc.)
     if (!origin) return callback(null, true);
+    // Exact match in allowlist
     if (allowedOrigins.includes(origin)) return callback(null, true);
+    // Allow ALL Vercel preview/production deployments (*.vercel.app)
+    if (/\.vercel\.app$/.test(origin)) return callback(null, true);
+    // Allow Railway services calling each other
+    if (/\.railway\.app$/.test(origin)) return callback(null, true);
     callback(new Error(`CORS: Origin '${origin}' not allowed`));
   },
   credentials: true,
