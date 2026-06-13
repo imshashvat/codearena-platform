@@ -47,6 +47,7 @@ app.use("/api/history",     require("./routes/historyRoutes"));
 app.use("/api/leaderboard", require("./routes/leaderboardRoutes"));
 app.use("/api/contests",    require("./routes/contestRoutes"));
 app.use("/api/admin",       require("./routes/adminRoutes"));
+app.use("/api/seed",        require("./routes/seedRoute"));
 
 // Health check
 app.get("/", (req, res) => res.send("🚀 CodeArena API Running"));
