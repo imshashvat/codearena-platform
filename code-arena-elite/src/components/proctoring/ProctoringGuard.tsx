@@ -247,19 +247,27 @@ export function ProctoringSetup({ contestTitle, requireWebcam, requireScreen, re
       const sh = window.screen.height;
       const vw = settings?.width || 0;
       const vh = settings?.height || 0;
-
       // Strictly require monitor (entire screen)
+      const isWindowOrTab = surface === 'window' || surface === 'browser';
+      const isMonitor = surface === 'monitor';
+      const trackLabel = (videoTrack?.label || "").toLowerCase();
+      const isLabelSuspicious = trackLabel.includes("edge") || trackLabel.includes("chrome") || trackLabel.includes("window") || trackLabel.includes("tab");
+
       let isFullScreen = false;
       if (surface !== 'unknown') {
-        isFullScreen = surface === 'monitor';
+        isFullScreen = isMonitor;
       } else {
-        isFullScreen = vw > sw * 0.9 && vh > sh * 0.9;
+        isFullScreen = vw > sw * 0.95 && vh > sh * 0.95 && !isLabelSuspicious;
+      }
+
+      if (isWindowOrTab) {
+        isFullScreen = false;
       }
 
       if (!isFullScreen) {
         stream.getTracks().forEach(t => t.stop());
         setLoading(false);
-        setError(`Please share your ENTIRE SCREEN (not a window or tab). Select "Entire Screen" in the sharing dialog.`);
+        setError(`Please share your ENTIRE SCREEN (not a window or tab). Select "Entire Screen" in the sharing dialog. [Debug: surface=${surface}, label=${videoTrack?.label || 'none'}]`);
         return;
       }
 
