@@ -114,6 +114,7 @@ async function verifyScreenShareIsFullScreen(stream: MediaStream): Promise<{
   const reportedSurface = (settings as any).displaySurface || 'unknown';
   const screenWidth = window.screen.width * window.devicePixelRatio;
   const screenHeight = window.screen.height * window.devicePixelRatio;
+  const trackLabel = (videoTrack.label || "").toLowerCase();
 
   // Try to grab actual frame dimensions using ImageCapture
   try {
@@ -123,13 +124,20 @@ async function verifyScreenShareIsFullScreen(stream: MediaStream): Promise<{
     const actualHeight = bitmap.height;
     bitmap.close();
 
+    const isWindowOrTab = reportedSurface === 'window' || reportedSurface === 'browser';
+    const isLabelSuspicious = trackLabel.includes("edge") || trackLabel.includes("chrome") || trackLabel.includes("window") || trackLabel.includes("tab");
+
     let isFullScreen = false;
     if (reportedSurface !== 'unknown') {
       isFullScreen = reportedSurface === 'monitor';
     } else {
       const widthRatio = actualWidth / screenWidth;
       const heightRatio = actualHeight / screenHeight;
-      isFullScreen = widthRatio > 0.9 && heightRatio > 0.9;
+      isFullScreen = widthRatio > 0.95 && heightRatio > 0.95 && !isLabelSuspicious;
+    }
+
+    if (isWindowOrTab) {
+      isFullScreen = false;
     }
 
     return { isFullScreen, actualWidth, actualHeight, screenWidth, screenHeight, reportedSurface };
@@ -138,11 +146,18 @@ async function verifyScreenShareIsFullScreen(stream: MediaStream): Promise<{
     const w = settings.width || 0;
     const h = settings.height || 0;
     
+    const isWindowOrTab = reportedSurface === 'window' || reportedSurface === 'browser';
+    const isLabelSuspicious = trackLabel.includes("edge") || trackLabel.includes("chrome") || trackLabel.includes("window") || trackLabel.includes("tab");
+
     let isFullScreen = false;
     if (reportedSurface !== 'unknown') {
       isFullScreen = reportedSurface === 'monitor';
     } else {
-      isFullScreen = w > 0.9 * window.screen.width && h > 0.9 * window.screen.height;
+      isFullScreen = w > 0.95 * window.screen.width && h > 0.95 * window.screen.height && !isLabelSuspicious;
+    }
+
+    if (isWindowOrTab) {
+      isFullScreen = false;
     }
 
     return {
