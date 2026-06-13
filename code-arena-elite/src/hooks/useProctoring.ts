@@ -123,19 +123,35 @@ async function verifyScreenShareIsFullScreen(stream: MediaStream): Promise<{
     const actualHeight = bitmap.height;
     bitmap.close();
 
-    // Allow 20% tolerance (different DPI/scaling)
-    const widthRatio = actualWidth / screenWidth;
-    const heightRatio = actualHeight / screenHeight;
-    const isFullScreen = widthRatio > 0.7 && heightRatio > 0.7;
+    let isFullScreen = false;
+    if (reportedSurface !== 'unknown') {
+      isFullScreen = reportedSurface === 'monitor';
+    } else {
+      const widthRatio = actualWidth / screenWidth;
+      const heightRatio = actualHeight / screenHeight;
+      isFullScreen = widthRatio > 0.9 && heightRatio > 0.9;
+    }
 
     return { isFullScreen, actualWidth, actualHeight, screenWidth, screenHeight, reportedSurface };
   } catch {
     // ImageCapture not supported, fall back to settings check
     const w = settings.width || 0;
     const h = settings.height || 0;
+    
+    let isFullScreen = false;
+    if (reportedSurface !== 'unknown') {
+      isFullScreen = reportedSurface === 'monitor';
+    } else {
+      isFullScreen = w > 0.9 * window.screen.width && h > 0.9 * window.screen.height;
+    }
+
     return {
-      isFullScreen: w > 0.6 * window.screen.width && h > 0.6 * window.screen.height,
-      actualWidth: w, actualHeight: h, screenWidth, screenHeight, reportedSurface
+      isFullScreen,
+      actualWidth: w,
+      actualHeight: h,
+      screenWidth,
+      screenHeight,
+      reportedSurface
     };
   }
 }

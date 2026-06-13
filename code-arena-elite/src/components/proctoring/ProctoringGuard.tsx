@@ -248,13 +248,18 @@ export function ProctoringSetup({ contestTitle, requireWebcam, requireScreen, re
       const vw = settings?.width || 0;
       const vh = settings?.height || 0;
 
-      // Accept monitor surface OR dimensions close to screen size
-      const isFullScreen = surface === 'monitor' || (vw > sw * 0.6 && vh > sh * 0.6);
+      // Strictly require monitor (entire screen)
+      let isFullScreen = false;
+      if (surface !== 'unknown') {
+        isFullScreen = surface === 'monitor';
+      } else {
+        isFullScreen = vw > sw * 0.9 && vh > sh * 0.9;
+      }
 
       if (!isFullScreen) {
         stream.getTracks().forEach(t => t.stop());
         setLoading(false);
-        setError(`Please share your ENTIRE SCREEN (not a window or tab). You shared a ${surface} surface (${vw}×${vh}). Select "Entire Screen" in the dialog.`);
+        setError(`Please share your ENTIRE SCREEN (not a window or tab). Select "Entire Screen" in the sharing dialog.`);
         return;
       }
 
